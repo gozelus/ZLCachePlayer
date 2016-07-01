@@ -8,7 +8,22 @@
 //
 
 #import "ZLBasePlayerVc.h"
+#import "ZLCachePlayer/ZLPlayer.h"
+@interface ZLBasePlayerVc()
+@property (nonatomic, strong) ZLPlayer *player;
 
+@end
 @implementation ZLBasePlayerVc
+
+- (void)viewDidLoad{
+    [super viewDidLoad];
+    [self.view setBackgroundColor:[UIColor orangeColor]];
+    
+    NSURL *url = [NSURL URLWithString:@"http://beauty1.meitudata.com/94010c7dccb18f48f64990cbb77edc89.mp4"];
+    
+    self.player = [ZLPlayer sharePlayer];
+  [ self.player setUrl:url superView:self.view frame:CGRectMake(0, 0, 100, 100)];
+    
+}
 
 @end

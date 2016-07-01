@@ -7,10 +7,12 @@
 //
 
 #import <UIKit/UIKit.h>
-
+#import <AVFoundation/AVFoundation.h>
 /**
  *  播放层
  */
 @interface ZLMediaPlayer : UIView
+
+- (void)setPlayer:(AVPlayer *)player;
 
 @end

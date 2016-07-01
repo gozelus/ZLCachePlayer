@@ -24,6 +24,7 @@ typedef NS_ENUM(NSInteger, TBPlayerState) {
 @property (nonatomic) AVPlayer *player;
 @property (nonatomic) AVPlayerItem *playerItem;
 
+@property (nonatomic, strong) NSURL *url;
 
 @end
 
@@ -47,12 +48,55 @@ typedef NS_ENUM(NSInteger, TBPlayerState) {
     }
     return self;
 }
+- (void)setUrl:(NSURL *)url{
+    if (url) {
+        _url = url;
+        AVURLAsset *asset = [AVURLAsset URLAssetWithURL:url options:nil];
+        self.playerItem = [[AVPlayerItem alloc] initWithAsset:asset];
+        self.player = [AVPlayer playerWithPlayerItem:self.playerItem];
+        self.playerView = [[ZLMediaPlayer alloc] init];
+        [self.playerView setPlayer:self.player];
+        [self setupObserve];
+    }
+}
+- (void)setupObserve{
+    [self.playerItem addObserver:self forKeyPath:@"status" options:NSKeyValueObservingOptionNew context:nil];
+}
 
 - (void)syncUI{
     if (self.player.currentItem != nil && [self.player.currentItem status] == AVPlayerStatusReadyToPlay) {
         //做一些通知
     }
 }
+- (void)releasePlayer{
+    
+}
+- (void)setUrl:(NSURL *)url superView:(UIView *)view frame:(CGRect)frame{
+    [self releasePlayer];
+    self.url = url;
+    self.playerView.frame = frame;
+    self.playerView.backgroundColor = [UIColor redColor];
+    [view addSubview:self.playerView];
+}
+
+
+
+
+
+
+- (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary<NSString *,id> *)change context:(void *)context{
+    NSLog(@"%ld",(long)self.playerItem.status);
+    
+    if ([keyPath isEqualToString:@"status"]) {
+        if (self.playerItem.status == AVPlayerStatusReadyToPlay) {
+            [self.player play];
+        }
+    }
+}
+
+
+
+
 
 
 @end
