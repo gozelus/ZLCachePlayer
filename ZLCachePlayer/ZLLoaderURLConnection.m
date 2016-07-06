@@ -17,4 +17,23 @@
     return [components URL];
 }
 
+
+
+
+
+
+
+
+
+
+#pragma mark - AVAssetResourceLoaderDelegate
+
+
+- (BOOL)resourceLoader:(AVAssetResourceLoader *)resourceLoader shouldWaitForLoadingOfRequestedResource:(AVAssetResourceLoadingRequest *)loadingRequest{
+    
+    
+    
+    return YES;
+}
+
 @end

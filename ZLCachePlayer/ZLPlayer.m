@@ -68,13 +68,13 @@ typedef NS_ENUM(NSInteger, TBPlayerState) {
 }
 - (void)setUrl:(NSURL *)url superView:(UIView *)view frame:(CGRect)frame{
 
-    [self removeItemObbserve];
     
     self.resourceLoader = [[ZLLoaderURLConnection alloc] init];
     NSURL *schemeUrl = [self.resourceLoader getSchemeVideoUrl:url];
+    self.urlAsset =[AVURLAsset URLAssetWithURL:schemeUrl options:nil];
+
     self.currentPlayItem = [AVPlayerItem playerItemWithAsset:self.urlAsset];
 
-    self.urlAsset =[AVURLAsset URLAssetWithURL:schemeUrl options:nil];
     [self.urlAsset.resourceLoader setDelegate:self.resourceLoader queue:dispatch_get_main_queue()];
     
     if (!self.player) {
