@@ -9,7 +9,7 @@
 #import "ZLPlayer.h"
 #import "ZLMediaPlayer.h"
 #import <AVFoundation/AVFoundation.h>
-
+#import "ZLLoaderURLConnection.h"
 //播放器的几种状态
 typedef NS_ENUM(NSInteger, TBPlayerState) {
     TBPlayerStateBuffering = 1,
@@ -23,6 +23,11 @@ typedef NS_ENUM(NSInteger, TBPlayerState) {
 
 @property (nonatomic) AVPlayer *player;
 @property (nonatomic) AVPlayerItem *playerItem;
+@property (nonatomic, strong) AVURLAsset *urlAsset;
+@property (nonatomic, strong) AVPlayerItem *currentPlayItem;
+
+@property (nonatomic, strong) ZLLoaderURLConnection *resourceLoader;
+
 
 @property (nonatomic, strong) NSURL *url;
 
@@ -48,35 +53,46 @@ typedef NS_ENUM(NSInteger, TBPlayerState) {
     }
     return self;
 }
-- (void)setUrl:(NSURL *)url{
-    if (url) {
-        _url = url;
-        AVURLAsset *asset = [AVURLAsset URLAssetWithURL:url options:nil];
-        self.playerItem = [[AVPlayerItem alloc] initWithAsset:asset];
-        self.player = [AVPlayer playerWithPlayerItem:self.playerItem];
-        self.playerView = [[ZLMediaPlayer alloc] init];
-        [self.playerView setPlayer:self.player];
-        [self setupObserve];
-    }
-}
+
 - (void)setupObserve{
     [self.playerItem addObserver:self forKeyPath:@"status" options:NSKeyValueObservingOptionNew context:nil];
 }
 
 - (void)syncUI{
-    if (self.player.currentItem != nil && [self.player.currentItem status] == AVPlayerStatusReadyToPlay) {
-        //做一些通知
-    }
+    self.playerView = [[ZLMediaPlayer alloc] init];
+    self.playerView.backgroundColor = [UIColor redColor];
+
 }
 - (void)releasePlayer{
     
 }
 - (void)setUrl:(NSURL *)url superView:(UIView *)view frame:(CGRect)frame{
-    [self releasePlayer];
-    self.url = url;
+
+    [self removeItemObbserve];
+    
+    self.resourceLoader = [[ZLLoaderURLConnection alloc] init];
+    NSURL *schemeUrl = [self.resourceLoader getSchemeVideoUrl:url];
+    self.currentPlayItem = [AVPlayerItem playerItemWithAsset:self.urlAsset];
+
+    self.urlAsset =[AVURLAsset URLAssetWithURL:schemeUrl options:nil];
+    [self.urlAsset.resourceLoader setDelegate:self.resourceLoader queue:dispatch_get_main_queue()];
+    
+    if (!self.player) {
+        self.player =  [AVPlayer playerWithPlayerItem:self.currentPlayItem] ;
+    }else{
+        [self.player replaceCurrentItemWithPlayerItem:self.currentPlayItem];
+    }
     self.playerView.frame = frame;
-    self.playerView.backgroundColor = [UIColor redColor];
+    [self.playerView setPlayer:self.player];
     [view addSubview:self.playerView];
+
+    [self.currentPlayItem addObserver:self forKeyPath:@"status" options:NSKeyValueObservingOptionNew context:nil];
+    
+}
+
+- (void)removeItemObbserve{
+    [self.currentPlayItem removeObserver:self forKeyPath:@"status"];
+    
 }
 
 
@@ -85,7 +101,7 @@ typedef NS_ENUM(NSInteger, TBPlayerState) {
 
 
 - (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary<NSString *,id> *)change context:(void *)context{
-    NSLog(@"%ld",(long)self.playerItem.status);
+    NSLog(@"%ld",(long)self.currentPlayItem.status);
     
     if ([keyPath isEqualToString:@"status"]) {
         if (self.playerItem.status == AVPlayerStatusReadyToPlay) {
