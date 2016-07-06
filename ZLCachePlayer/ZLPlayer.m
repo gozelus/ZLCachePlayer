@@ -10,6 +10,11 @@
 #import "ZLMediaPlayer.h"
 #import <AVFoundation/AVFoundation.h>
 #import "ZLLoaderURLConnection.h"
+static NSString *fakeSchemePrefix = @"streaming";
+
+
+#define kCustomVideoScheme @"yourScheme"
+
 //播放器的几种状态
 typedef NS_ENUM(NSInteger, TBPlayerState) {
     TBPlayerStateBuffering = 1,
@@ -66,16 +71,23 @@ typedef NS_ENUM(NSInteger, TBPlayerState) {
 - (void)releasePlayer{
     
 }
+#define kCustomVideoScheme @"yourScheme"
+
 - (void)setUrl:(NSURL *)url superView:(UIView *)view frame:(CGRect)frame{
 
-    
     self.resourceLoader = [[ZLLoaderURLConnection alloc] init];
-    NSURL *schemeUrl = [self.resourceLoader getSchemeVideoUrl:url];
-    self.urlAsset =[AVURLAsset URLAssetWithURL:schemeUrl options:nil];
 
-    self.currentPlayItem = [AVPlayerItem playerItemWithAsset:self.urlAsset];
-
-    [self.urlAsset.resourceLoader setDelegate:self.resourceLoader queue:dispatch_get_main_queue()];
+    NSURL *currentURL = [NSURL URLWithString:@"http://***.***.***"];
+    NSURLComponents *components = [[NSURLComponents alloc]initWithURL:currentURL resolvingAgainstBaseURL:NO];
+    ////注意，不加这一句不能执行到回调操作
+    components.scheme = kCustomVideoScheme;
+    AVURLAsset *urlAsset = [AVURLAsset URLAssetWithURL:components.URL
+                                               options:nil];
+    //_resourceManager在接下来讲述
+    [urlAsset.resourceLoader setDelegate:_resourceLoader queue:dispatch_get_main_queue()];
+    AVPlayerItem *item = [AVPlayerItem playerItemWithAsset:urlAsset];
+    _currentPlayItem = item;
+    
     
     if (!self.player) {
         self.player =  [AVPlayer playerWithPlayerItem:self.currentPlayItem] ;
@@ -108,6 +120,17 @@ typedef NS_ENUM(NSInteger, TBPlayerState) {
             [self.player play];
         }
     }
+}
+
+
+- (NSURL *)fakeUrl:(NSURL *)realUrl {
+    NSURLComponents *components = [[NSURLComponents alloc]initWithURL:realUrl resolvingAgainstBaseURL:NO];
+    
+    NSString *scheme = components.scheme;
+    scheme = [fakeSchemePrefix stringByAppendingString:scheme];
+    components.scheme = scheme;
+    
+    return components.URL;
 }
 
 

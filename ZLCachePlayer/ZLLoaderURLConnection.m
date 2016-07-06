@@ -11,17 +11,6 @@
 
 @implementation ZLLoaderURLConnection
 
-- (NSURL *)getSchemeVideoUrl:(NSURL *)url{
-    NSURLComponents *components = [[NSURLComponents alloc] initWithURL:url resolvingAgainstBaseURL:NO];
-    components.scheme =(NSString *) kMyScheme;
-    return [components URL];
-}
-
-
-
-
-
-
 
 
 
@@ -32,8 +21,12 @@
 - (BOOL)resourceLoader:(AVAssetResourceLoader *)resourceLoader shouldWaitForLoadingOfRequestedResource:(AVAssetResourceLoadingRequest *)loadingRequest{
     
     
-    
+    NSLog(@"%s",__func__);
     return YES;
+}
+
+- (void)resourceLoader:(AVAssetResourceLoader *)resourceLoader didCancelAuthenticationChallenge:(NSURLAuthenticationChallenge *)authenticationChallenge{
+    
 }
 
 @end
