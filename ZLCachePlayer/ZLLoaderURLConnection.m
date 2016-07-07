@@ -16,6 +16,7 @@
 @property (nonatomic, strong) NSURLConnection *connection;
 @property (nonatomic, strong) NSFileHandle    *fileHandle;
 @property (nonatomic, strong) NSString        *tempPath;
+@property (nonatomic, assign) NSUInteger dateLength;
 
 @end
 
@@ -78,10 +79,11 @@
 - (BOOL)respondWithDataForRequest:(AVAssetResourceLoadingDataRequest *)dataRequest{
     
     long long startOffet = dataRequest.requestedOffset;
-    NSData *filedata = [NSData dataWithContentsOfURL:[NSURL fileURLWithPath:_videoPath] options:NSDataReadingMappedIfSafe error:nil];
+    NSData *filedata = [NSData dataWithContentsOfURL:[NSURL fileURLWithPath:_tempPath] options:NSDataReadingMappedIfSafe error:nil];
+    NSRange range = NSMakeRange(dataRequest.requestedOffset, _dateLength);
+    [filedata subdataWithRange:range];
+    [dataRequest respondWithData:filedata];
     
-    
-
     BOOL isHave = NO;
     if (!isHave) {
         //开启网络请求
@@ -121,10 +123,9 @@
     [self.fileHandle writeData:data];
 
     
-    [self processPendingRequests];
-    
     //缓存完毕通知 让外部重新获取数据
-    
+    _dateLength =  data.length;
+    [self processPendingRequests];
 }
 
 - (void)connectionDidFinishLoading:(NSURLConnection *)connection{
