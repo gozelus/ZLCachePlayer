@@ -77,7 +77,7 @@ typedef NS_ENUM(NSInteger, TBPlayerState) {
 
     self.resourceLoader = [[ZLLoaderURLConnection alloc] init];
 
-    NSURL *currentURL = [NSURL URLWithString:@"http://zyvideo1.oss-cn-qingdao.aliyuncs.com/zyvd/7c/de/04ec95f4fd42d9d01f63b9683ad0"];
+    NSURL *currentURL = [NSURL URLWithString:@"http://beauty1.meitudata.com/09b556cd8e9a587fd35bc317460fec7f.mp4"];
     NSURLComponents *components = [[NSURLComponents alloc]initWithURL:currentURL resolvingAgainstBaseURL:NO];
     ////注意，不加这一句不能执行到回调操作
     components.scheme = kCustomVideoScheme;

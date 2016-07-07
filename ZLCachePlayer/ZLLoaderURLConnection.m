@@ -14,7 +14,8 @@
 @property (nonatomic, strong) NSMutableArray *pendingRequest;
 @property (nonatomic, strong) NSString *videoPath;
 @property (nonatomic, strong) NSURLConnection *connection;
-
+@property (nonatomic, strong) NSFileHandle    *fileHandle;
+@property (nonatomic, strong) NSString        *tempPath;
 
 @end
 
@@ -24,6 +25,10 @@
 - (instancetype)init{
     if (self = [super init]) {
         self.pendingRequest = [NSMutableArray array];
+        NSString *document = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES).lastObject;
+        _tempPath =  [document stringByAppendingPathComponent:@"zlTemp.mp4"];
+        [[NSFileManager defaultManager] createFileAtPath:_tempPath contents:nil attributes:nil];
+
     }
     return self;
 }
@@ -72,9 +77,11 @@
 
 - (BOOL)respondWithDataForRequest:(AVAssetResourceLoadingDataRequest *)dataRequest{
     
-//    long long startOffet = dataRequest.requestedOffset;
-//    NSData *filedata = [NSData dataWithContentsOfURL:[NSURL fileURLWithPath:_videoPath] options:NSDataReadingMappedIfSafe error:nil];
-//
+    long long startOffet = dataRequest.requestedOffset;
+    NSData *filedata = [NSData dataWithContentsOfURL:[NSURL fileURLWithPath:_videoPath] options:NSDataReadingMappedIfSafe error:nil];
+    
+    
+
     BOOL isHave = NO;
     if (!isHave) {
         //开启网络请求
@@ -92,14 +99,47 @@
     actualURLComponents.scheme = @"http";
     
     NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:[actualURLComponents URL] cachePolicy:NSURLRequestReloadIgnoringCacheData timeoutInterval:20.0];
+//    
+//    [request addValue:[NSString stringWithFormat:@"bytes=%ld-%ld",(unsigned long)range.location, (unsigned long)range.length] forHTTPHeaderField:@"Range"];
     
-
     self.connection = [[NSURLConnection alloc] initWithRequest:request delegate:self startImmediately:NO];
     [self.connection setDelegateQueue:[NSOperationQueue mainQueue]];
     [self.connection start];
     
 }
+- (void)connection:(NSURLConnection *)connection didReceiveResponse:(NSURLResponse *)response
+{
+    self.fileHandle = [NSFileHandle fileHandleForWritingAtPath:_tempPath];
 
+    NSLog(@"%@",response);
+}
 
+- (void)connection:(NSURLConnection *)connection didReceiveData:(NSData *)data{
 
+    //收到了数据 这个地方应该缓存下
+    [self.fileHandle seekToEndOfFile];
+    [self.fileHandle writeData:data];
+
+    
+    [self processPendingRequests];
+    
+    //缓存完毕通知 让外部重新获取数据
+    
+}
+
+- (void)connectionDidFinishLoading:(NSURLConnection *)connection{
+    
+    //这里自己写需要保存数据的路径
+    NSString *document = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES).lastObject;
+    NSString *movePath =  [document stringByAppendingPathComponent:@"保存数据.mp4"];
+    
+    BOOL isSuccess = [[NSFileManager defaultManager] copyItemAtPath:_tempPath toPath:movePath error:nil];
+    if (isSuccess) {
+        NSLog(@"rename success");
+    }else{
+        NSLog(@"rename fail");
+    }
+    NSLog(@"----%@", movePath);
+
+}
 @end
