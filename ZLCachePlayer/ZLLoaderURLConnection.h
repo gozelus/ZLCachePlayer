@@ -12,6 +12,7 @@
 @interface ZLLoaderURLConnection : NSObject<AVAssetResourceLoaderDelegate>
 
 
+@property (nonatomic, strong) NSURL *url;
 
 
 @end

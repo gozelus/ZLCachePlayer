@@ -77,12 +77,13 @@ typedef NS_ENUM(NSInteger, TBPlayerState) {
 
     self.resourceLoader = [[ZLLoaderURLConnection alloc] init];
 
-    NSURL *currentURL = [NSURL URLWithString:@"http://***.***.***"];
+    NSURL *currentURL = [NSURL URLWithString:@"http://zyvideo1.oss-cn-qingdao.aliyuncs.com/zyvd/7c/de/04ec95f4fd42d9d01f63b9683ad0"];
     NSURLComponents *components = [[NSURLComponents alloc]initWithURL:currentURL resolvingAgainstBaseURL:NO];
     ////注意，不加这一句不能执行到回调操作
     components.scheme = kCustomVideoScheme;
     AVURLAsset *urlAsset = [AVURLAsset URLAssetWithURL:components.URL
                                                options:nil];
+    _resourceLoader.url = components.URL;
     //_resourceManager在接下来讲述
     [urlAsset.resourceLoader setDelegate:_resourceLoader queue:dispatch_get_main_queue()];
     AVPlayerItem *item = [AVPlayerItem playerItemWithAsset:urlAsset];
