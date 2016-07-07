@@ -8,6 +8,7 @@
 //
 
 #import "ZLLoaderURLConnection.h"
+#import <MobileCoreServices/MobileCoreServices.h>
 
 @interface ZLLoaderURLConnection()<NSURLConnectionDelegate>
 
@@ -17,6 +18,10 @@
 @property (nonatomic, strong) NSFileHandle    *fileHandle;
 @property (nonatomic, strong) NSString        *tempPath;
 @property (nonatomic, assign) NSUInteger dateLength;
+@property (nonatomic, assign) NSUInteger videoLength;
+@property (nonatomic, assign) NSUInteger downLoadingOffet;
+
+
 
 @end
 
@@ -30,6 +35,8 @@
         _tempPath =  [document stringByAppendingPathComponent:@"zlTemp.mp4"];
         [[NSFileManager defaultManager] createFileAtPath:_tempPath contents:nil attributes:nil];
 
+        _downLoadingOffet  = 0;
+        
     }
     return self;
 }
@@ -57,8 +64,16 @@
 }
 
 
-
 #pragma mark - 处理数据相关
+
+- (void)fillInContentInformation:(AVAssetResourceLoadingContentInformationRequest *)contentInformationRequest
+{
+    NSString *mimeType = @"video/mp4";
+    CFStringRef contentType = UTTypeCreatePreferredIdentifierForTag(kUTTagClassMIMEType, (__bridge CFStringRef)(mimeType), NULL);
+    contentInformationRequest.byteRangeAccessSupported = YES;
+    contentInformationRequest.contentType = CFBridgingRelease(contentType);
+    contentInformationRequest.contentLength = self.videoLength;
+}
 
 - (void)dealWithLoadingRequest:(AVAssetResourceLoadingRequest *)loadingRequest{
     NSLog(@"%s",__func__);
@@ -70,24 +85,19 @@
     NSMutableArray *requestCompleted = [NSMutableArray array];
     
     for (AVAssetResourceLoadingRequest *loadingRequest in self.pendingRequest) {
-        //处理数据
-//        NSLog(@"需要处理数据======%@",loadingRequest);
-        [self respondWithDataForRequest:loadingRequest.dataRequest];
+
+        [self fillInContentInformation:loadingRequest.contentInformationRequest]; //给请求加信息
+        [self respondWithDataForRequest:loadingRequest.dataRequest]; //处理请求
     }
 }
 
 - (BOOL)respondWithDataForRequest:(AVAssetResourceLoadingDataRequest *)dataRequest{
     
-    long long startOffet = dataRequest.requestedOffset;
-    NSData *filedata = [NSData dataWithContentsOfURL:[NSURL fileURLWithPath:_tempPath] options:NSDataReadingMappedIfSafe error:nil];
-    NSRange range = NSMakeRange(dataRequest.requestedOffset, _dateLength);
-    [filedata subdataWithRange:range];
-    [dataRequest respondWithData:filedata];
-    
+
     BOOL isHave = NO;
     if (!isHave) {
         //开启网络请求
-        [self startNetworkRequestWithRange:NSMakeRange(dataRequest.requestedOffset, dataRequest.requestedLength) url:_url];
+//        [self startNetworkRequestWithRange:NSMakeRange(dataRequest.requestedOffset, dataRequest.requestedLength) url:_url];
     }
     
     return YES;
@@ -113,6 +123,20 @@
 {
     self.fileHandle = [NSFileHandle fileHandleForWritingAtPath:_tempPath];
 
+    NSHTTPURLResponse *httpResponse = (NSHTTPURLResponse*)response;
+    NSDictionary *dic = (NSDictionary *)[httpResponse allHeaderFields];
+    NSString *content = [dic valueForKey:@"Content-Range"];
+    NSArray *array = [content componentsSeparatedByString:@"/"];
+    NSString *length = array.lastObject;
+    NSUInteger videoLength;
+    
+    if ([length integerValue] == 0) {
+        videoLength = (NSUInteger)httpResponse.expectedContentLength;
+    } else {
+        videoLength = [length integerValue];
+    }
+    self.videoLength = videoLength;
+    
     NSLog(@"%@",response);
 }
 
@@ -121,10 +145,9 @@
     //收到了数据 这个地方应该缓存下
     [self.fileHandle seekToEndOfFile];
     [self.fileHandle writeData:data];
-
+    _downLoadingOffet += data.length;
     
     //缓存完毕通知 让外部重新获取数据
-    _dateLength =  data.length;
     [self processPendingRequests];
 }
 
