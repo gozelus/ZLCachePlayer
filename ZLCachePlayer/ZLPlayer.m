@@ -117,7 +117,7 @@ typedef NS_ENUM(NSInteger, TBPlayerState) {
     NSLog(@"%ld",(long)self.currentPlayItem.status);
     
     if ([keyPath isEqualToString:@"status"]) {
-        if (self.playerItem.status == AVPlayerStatusReadyToPlay) {
+        if (self.playerItem.status == AVPlayerStatusUnknown) {
             [self.player play];
         }
     }
